@@ -28,13 +28,17 @@
 (defvar discord-emacs--blacklisted-buffer-names
   '("^\\s *\\*"))
 
+(defvar discord-emacs--snap nil)
+
 (defun discord-emacs--maybe (x r)
   "Shortcut for (if X X R)."
   (if x x r))
 
 (defun discord-emacs--get-ipc-url ()
   "Get the socket address to make the ipc connection on."
-  (format "/run/user/%i/discord-ipc-0" (user-uid)))
+  (format "/run/user/%i/%s/discord-ipc-0"
+          (user-uid)
+          (if discord-emacs--snap "snap.discord" "")))
 
 (defun discord-emacs--make-ipc-connection ()
   "Make a ipc socket connection."
@@ -136,13 +140,13 @@
   (unless discord-emacs--started
     (setq discord-emacs--client-id client-id)
     (add-hook 'post-command-hook #'discord-emacs--ipc-send-update)
-    (add-hook 'kill-emacs #'discord-emacs--stop)
+    (add-hook 'kill-emacs-hook #'discord-emacs-stop)
     (ignore-errors ; if we fail here we'll just reconnect later
       (discord-emacs--ipc-connect client-id))))
 
 (defun discord-emacs-stop ()
-  (when-let ((process (get-process "discord-ipc-progress")))
-    (kill-process process)
+  (when-let ((process (get-process "discord-ipc-process")))
+    (delete-process process)
     (setq discord-emacs--started nil)))
 
 (provide 'discord-emacs)
