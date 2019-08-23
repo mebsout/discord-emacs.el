@@ -30,6 +30,9 @@
 
 (defvar discord-emacs--snap nil)
 
+(defun discord-process-name ()
+  (concat "dispcord-ipc-emacs-" (number-to-string (emacs-pid))))
+
 (defun discord-emacs--maybe (x r)
   "Shortcut for (if X X R)."
   (if x x r))
@@ -42,7 +45,7 @@
 
 (defun discord-emacs--make-ipc-connection ()
   "Make a ipc socket connection."
-  (make-network-process :name "discord-ipc-process"
+  (make-network-process :name (discord-process-name)
                         :remote (discord-emacs--get-ipc-url)))
 
 (defun discord-emacs--pack-data (opcode data)
@@ -66,7 +69,7 @@
 
 (defun discord-emacs--send-json (opcode data)
   "Send a JSON payload over the ipc connection with the opcode OPCODE and data DATA."
-  (let ((process (get-process "discord-ipc-process")))
+  (let ((process (get-process (discord-process-name))))
     (if (and process
              (process-live-p process))
         (process-send-string process (discord-emacs--pack-data opcode data))
@@ -145,7 +148,7 @@
       (discord-emacs--ipc-connect client-id))))
 
 (defun discord-emacs-stop ()
-  (when-let ((process (get-process "discord-ipc-process")))
+  (when-let ((process (get-process (discord-process-name))))
     (delete-process process)
     (setq discord-emacs--started nil)))
 
